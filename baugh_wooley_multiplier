@@ -9,20 +9,20 @@ module  baugh_wooley_multiplier (
     genvar i, j;
     generate
         for (i = 0; i < 16; i = i + 1) 
-           begin
+           begin : row
               for (j = 0; j < 16; j = j + 1) 
-                begin
+                begin : col
                   assign pp[i][i + j] = ((i == 15) ^ (j == 15)) ? ~(a[i] & b[j]) : (a[i] & b[j]);
                 end
             for (j = i + 16; j < 32; j = j + 1)
-                begin
+                begin : filling
                   assign pp[i][j] = 1'b0; // remaining bits in pp[i] = 0
                 end
           end
     endgenerate
 
     always @(*)
-     begin
+     begin : summing
         sum = 32'h00008000; // error(2^15)
         for (k = 0; k < 16; k = k + 1) sum = sum + pp[k];
      end
