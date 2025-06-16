@@ -3,50 +3,28 @@ module  baugh_wooley_multiplier (
     input  signed [15:0] b,
     output signed [31:0] product
 );
-
-      wire [31:0] pp [15:0];  // Partial products
-
+    wire [31:0] pp [15:0];  // Partial products
+    reg signed [31:0] sum;
+    integer k;
     genvar i, j;
     generate
         for (i = 0; i < 16; i = i + 1) 
-           begin : row
+           begin
               for (j = 0; j < 16; j = j + 1) 
-                begin : col
-                  if (i == 15 && j == 15)
-                      begin
-                        assign pp[i][i + j] = a[i] & b[j];
-                      end
-                  else if (i == 15 || j == 15)
-                      begin
-                        assign pp[i][i + j] = ~(a[i] & b[j]);
-                      end 
-                  else 
-                      begin
-                        assign pp[i][i + j] = a[i] & b[j];
-                      end
+                begin
+                  assign pp[i][i + j] = ((i == 15) ^ (j == 15)) ? ~(a[i] & b[j]) : (a[i] & b[j]);
                 end
-            // Fill remaining bits in pp[i] with 0 (unused upper bits)
             for (j = i + 16; j < 32; j = j + 1)
-                begin : zero_fill
-                      assign pp[i][j] = 1'b0;
+                begin
+                  assign pp[i][j] = 1'b0; // remaining bits in pp[i] = 0
                 end
           end
     endgenerate
 
-    // Sum all partial products with correction term
-    reg [31:0] sum;
-    integer k;
-
     always @(*)
      begin
-        sum = 32'd0;
-        for (k = 0; k < 16; k = k + 1) 
-                 begin
-                    sum = sum + pp[k];
-                 end
-        sum = sum + 32'h00008000; // Correction for sign inversion (1 << 15)
+        sum = 32'h00008000; // error(2^15)
+        for (k = 0; k < 16; k = k + 1) sum = sum + pp[k];
      end
-
     assign product = sum;
-
 endmodule
