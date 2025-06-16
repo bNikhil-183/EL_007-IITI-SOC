@@ -4,30 +4,49 @@ module  baugh_wooley_multiplier (
     output signed [31:0] product
 );
 
-wire [31:0] p [15:0]; // partial products(32*16 bit)
-reg [31:0] sum;
-integer k,j ;
-genvar i;
+      wire [31:0] pp [15:0];  // Partial products
 
-generate
-   for (i = 0; i < 16; i = i + 1) 
-      begin
-         if (j >= i && j < i + 16)
-             assign p[i][j] = ((i == 15) ^ (j - i == 15)) ? ~(a[i] & b[j - i]) : (a[i] & b[j - i]); 
-                 //if only one MSB is multiplied with other bits, then it should be inverted
-         else
-             assign p[i][j] = 1'b0; //unused upper bits = 0
-       end
-endgenerate
+    genvar i, j;
+    generate
+        for (i = 0; i < 16; i = i + 1) 
+           begin : row
+              for (j = 0; j < 16; j = j + 1) 
+                begin : col
+                  if (i == 15 && j == 15)
+                      begin
+                        assign pp[i][i + j] = a[i] & b[j];
+                      end
+                  else if (i == 15 || j == 15)
+                      begin
+                        assign pp[i][i + j] = ~(a[i] & b[j]);
+                      end 
+                  else 
+                      begin
+                        assign pp[i][i + j] = a[i] & b[j];
+                      end
+                end
+            // Fill remaining bits in pp[i] with 0 (unused upper bits)
+            for (j = i + 16; j < 32; j = j + 1)
+                begin : zero_fill
+                      assign pp[i][j] = 1'b0;
+                end
+          end
+    endgenerate
 
-always @(*)
-    begin
-       sum = 32'h00008000; // error when taking the 2's complement(2^15)
-          for (k = 0; k < 16; k++) sum = sum + p[k]; // adding all partial products
+    // Sum all partial products with correction term
+    reg [31:0] sum;
+    integer k;
+
+    always @(*)
+     begin
+        sum = 32'd0;
+        for (k = 0; k < 16; k = k + 1) 
+                 begin
+                    sum = sum + pp[k];
+                 end
+        sum = sum + 32'h00008000; // Correction for sign inversion (1 << 15)
      end
 
-assign product = sum;
+    assign product = sum;
 
 endmodule
-
-
