@@ -1,0 +1,52 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 17.06.2025 18:55:46
+// Design Name: 
+// Module Name: baugh_wooley
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module  baugh_wooley_multiplier (
+    input  signed [15:0] a,
+    input  signed [15:0] b,
+    output signed [31:0] product
+);
+    wire [31:0] pp [15:0];  // Partial products
+    reg signed [31:0] sum;
+    integer k;
+    genvar i, j;
+    generate
+        for (i = 0; i < 16; i = i + 1) 
+           begin : row
+              for (j = 0; j < 16; j = j + 1) 
+                begin : col
+                  assign pp[i][i + j] = ((i == 15) ^ (j == 15)) ? ~(a[i] & b[j]) : (a[i] & b[j]);
+                end
+            for (j = i + 16; j < 32; j = j + 1)
+                begin : filling
+                  assign pp[i][j] = 1'b0; // remaining bits in pp[i] = 0
+                end
+          end
+    endgenerate
+
+    always @(*)
+     begin : summing
+        sum = 32'h00008000; // error(2^15)
+        for (k = 0; k < 16; k = k + 1) sum = sum + pp[k];
+     end
+    assign product = sum;
+endmodule
