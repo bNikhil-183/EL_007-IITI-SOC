@@ -20,58 +20,43 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module booths_multiplier (
-    input [15:0] multiplicand,
-    input [15:0] multiplier,   
+module booths_multiplier_radix4 (
     input clk,
+    input [15:0] multiplicand,
+    input [15:0] multiplier,
     output reg [31:0] result
 );
 
-    reg signed [16:0] A = 0;         // 1 bit extra for signed operation
-    reg signed [15:0] Q = 0;         // Multiplier
-    reg Q_1 = 0;                     // Extra bit for Booth's Algorithm
-    reg signed [15:0] M = 0;         // Multiplicand
-    reg [4:0] count = 0;             // Needs to count 16 cycles
+    reg signed [33:0] product = 0;         // Combined {A, Q, Q_-1} — total 33 bits
+    reg signed [16:0] M = 0;               // Extended multiplicand
+    reg [2:0] count = 0;
+
+    reg [4:0] cycle = 0;                   // Radix-4: only 8 cycles
 
     always @(posedge clk) begin
-        if (count == 0) begin
-            M <= multiplicand;
-            Q <= multiplier;
-            A <= 0;
-            Q_1 <= 0;
-            count <= 16;
-        end
-        else begin
-            case ({Q[0], Q_1})
-                2'b01: A <= A + M;   // A = A + M
-                2'b10: A <= A - M;   // A = A - M
-                default: A <= A;     // No operation
+        if (cycle == 0) begin
+            M <= {multiplicand[15], multiplicand};  // Sign-extend to 17 bits
+            product <= {17'd0, multiplier, 1'b0};    // A = 0, Q = multiplier, Q_-1 = 0
+            cycle <= 8;
+        end else begin
+            // Extract current 3 bits: {Q1, Q0, Q_-1}
+            case (product[2:0])
+                3'b000, 3'b111: ;                            // 0 × M (do nothing)
+                3'b001, 3'b010: product[33:17] <= product[33:17] + M;   // +1 × M
+                3'b011: product[33:17] <= product[33:17] + (M << 1); // +2 × M
+                3'b100: product[33:17] <= product[33:17] - (M << 1); // -2 × M
+                3'b101, 3'b110: product[33:17] <= product[33:17] - M;   // -1 × M
             endcase
 
-            // Arithmetic right shift of {A, Q, Q_1}
-            {A, Q, Q_1} <= {A[16], A, Q, Q_1} >>> 1;
+            // Arithmetic right shift by 2
+            product <= $signed(product) >>> 2;
 
-            count <= count - 1;
+            cycle <= cycle - 1;
 
-            if (count == 1) begin
-                result <= {A[15:0], Q};  // Final 32-bit result
+            if (cycle == 1) begin
+                result <= product[32:1];  // Drop the LSB (Q_-1), result = A+Q
             end
         end
     end
 
 endmodule
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
