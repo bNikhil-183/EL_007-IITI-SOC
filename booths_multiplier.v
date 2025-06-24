@@ -1,62 +1,51 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 17.06.2025 00:28:17
-// Design Name: 
-// Module Name: booths_multiplier
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
-
-module booths_multiplier_radix4 (
+module booth_multiplier (
     input clk,
-    input [15:0] multiplicand,
-    input [15:0] multiplier,
-    output reg [31:0] result
+    input rst,
+    input signed [15:0] multiplicand,
+    input signed [15:0] multiplier,
+    output reg signed [31:0] result
 );
+    reg signed [33:0] product;         // 17-bit accumulator + 16-bit multiplier + 1 bit
+    reg signed [16:0] M;               // Sign-extended multiplicand
+    reg [3:0] cycle;                   // 8 Booth cycles
 
-    reg signed [33:0] product = 0;         // Combined {A, Q, Q_-1} — total 33 bits
-    reg signed [16:0] M = 0;               // Extended multiplicand
-    reg [2:0] count = 0;
+    reg signed [33:0] temp_product;
 
-    reg [4:0] cycle = 0;                   // Radix-4: only 8 cycles
-
-    always @(posedge clk) begin
-        if (cycle == 0) begin
-            M <= {multiplicand[15], multiplicand};  // Sign-extend to 17 bits
-            product <= {17'd0, multiplier, 1'b0};    // A = 0, Q = multiplier, Q_-1 = 0
-            cycle <= 8;
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            product <= 34'd0;
+            M <= 17'd0;
+            cycle <= 4'd0;
+            result <= 32'sd0;
         end else begin
-            // Extract current 3 bits: {Q1, Q0, Q_-1}
-            case (product[2:0])
-                3'b000, 3'b111: ;                            // 0 × M (do nothing)
-                3'b001, 3'b010: product[33:17] <= product[33:17] + M;   // +1 × M
-                3'b011: product[33:17] <= product[33:17] + (M << 1); // +2 × M
-                3'b100: product[33:17] <= product[33:17] - (M << 1); // -2 × M
-                3'b101, 3'b110: product[33:17] <= product[33:17] - M;   // -1 × M
-            endcase
+            if (cycle == 0) begin
+                // Initialization
+                M <= {multiplicand[15], multiplicand};     // Sign extend multiplicand
+                product <= {17'd0, multiplier, 1'b0};      // Append 0 at LSB
+                cycle <= 4'd8;
+            end else begin
+                // Use blocking assignments to avoid race conditions
+                temp_product = product;
 
-            // Arithmetic right shift by 2
-            product <= $signed(product) >>> 2;
+                // Booth encoding on lowest 3 bits
+                case (product[2:0])
+                    3'b000, 3'b111: ; // No operation
+                    3'b001, 3'b010: temp_product[33:17] = temp_product[33:17] + M;              // +M
+                    3'b011:         temp_product[33:17] = temp_product[33:17] + (M <<< 1);      // +2M
+                    3'b100:         temp_product[33:17] = temp_product[33:17] - (M <<< 1);      // -2M
+                    3'b101, 3'b110: temp_product[33:17] = temp_product[33:17] - M;              // -M
+                endcase
 
-            cycle <= cycle - 1;
+                // Arithmetic right shift by 2
+                product <= $signed(temp_product) >>> 2;
 
-            if (cycle == 1) begin
-                result <= product[32:1];  // Drop the LSB (Q_-1), result = A+Q
+                cycle <= cycle - 1;
+
+               if (product[32] == 1'b0) result <= product[32:1] >>> 2;
+	           	else result <= $signed(product[32:1]) >>> 2 ;
             end
         end
     end
-
-endmodule
+endmodule	
