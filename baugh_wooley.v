@@ -1,52 +1,39 @@
-`timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 17.06.2025 18:55:46
-// Design Name: 
-// Module Name: baugh_wooley
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
+timescale 1ns / 1ps
 
-
-module  baugh_wooley_multiplier (
+module baugh_wooley (
     input  signed [15:0] a,
     input  signed [15:0] b,
     output signed [31:0] product
 );
-    wire [31:0] pp [15:0];  // Partial products
-    reg signed [31:0] sum;
-    integer k;
+    wire [15:0] A = a;
+    wire [15:0] B = b;
+    wire [31:0] partial[15:0];
+
     genvar i, j;
     generate
-        for (i = 0; i < 16; i = i + 1) 
-           begin : row
-              for (j = 0; j < 16; j = j + 1) 
-                begin : col
-                  assign pp[i][i + j] = ((i == 15) ^ (j == 15)) ? ~(a[i] & b[j]) : (a[i] & b[j]);
-                end
+        for (i = 0; i < 16; i = i + 1) begin: gen_partial
+            for (j = 0; j < 16; j = j + 1) begin: gen_bit
+                // Use XOR to determine if the result needs inversion
+                wire negate = (i == 15) ^ (j == 15);  // true if exactly one is MSB
+                assign partial[i][i+j] = negate ? ~(A[i] & B[j]) : (A[i] & B[j]);
+            end
+
+            // Zero padding
+            for (j = 0; j < i; j = j + 1)
+                assign partial[i][j] = 1'b0;
             for (j = i + 16; j < 32; j = j + 1)
-                begin : filling
-                  assign pp[i][j] = 1'b0; // remaining bits in pp[i] = 0
-                end
-          end
+                assign partial[i][j] = 1'b0;
+        end
     endgenerate
 
-    always @(*)
-     begin : summing
-        sum = 32'h00008000; // error(2^15)
-        for (k = 0; k < 16; k = k + 1) sum = sum + pp[k];
-     end
+    // Final accumulation with compensation
+    reg signed [31:0] sum;
+    integer k;
+    always @(*) begin
+        sum = 32'h00010001;  // Compensation bits
+        for (k = 0; k < 16; k = k + 1)
+            sum = sum + partial[k];
+    end
+
     assign product = sum;
 endmodule
