@@ -1,4 +1,26 @@
 `timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 07/30/2025 10:52:16 PM
+// Design Name: 
+// Module Name: direct_multiplication
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+`timescale 1ns / 1ps
 
 //full adder
 
@@ -127,31 +149,55 @@ endmodule
 
 // direct
 
-module direct(
+module direct_multiplication(
+input clk,
+    input rst,
+    input load,        // Load input buffer
+    input compute,     // Start computation
+    output reg valid,  // Output valid signal
+
     input signed [15:0] a1, b1, c1, d1,
     input signed [15:0] a2, b2, c2, d2,
-    output [31:0] r1, r2, r3, r4
+    output reg [31:0] r1, r2, r3, r4
 );
+
+// Input buffers
+reg signed [15:0] a1_buf, b1_buf, c1_buf, d1_buf;
+reg signed [15:0] a2_buf, b2_buf, c2_buf, d2_buf;
+// Output wires (from computation)
+    wire [31:0] r1_w, r2_w, r3_w, r4_w;
+
+    // Load input data into buffers
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            a1_buf <= 0; b1_buf <= 0; c1_buf <= 0; d1_buf <= 0;
+            a2_buf <= 0; b2_buf <= 0; c2_buf <= 0; d2_buf <= 0;
+        end else if (load) begin
+            a1_buf <= a1; b1_buf <= b1; c1_buf <= c1; d1_buf <= d1;
+            a2_buf <= a2; b2_buf <= b2; c2_buf <= c2; d2_buf <= d2;
+        end
+    end
+
     wire signed [31:0] aa, bb, cc, dd, ab, ba, cd, dc, ac, bd, ca, db, ad, bc, cb, da;
     wire [31:0] k1, k2, k3, k4, k5, k6, k7, k8;
     wire d13, d14, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12;
 
-    multiplier_16bit m1(a1, a2, aa);
-    multiplier_16bit m2(b1, b2, bb);
-    multiplier_16bit m3(c1, c2, cc);
-    multiplier_16bit m4(d1, d2, dd);
-    multiplier_16bit m5(a1, b2, ab);
-    multiplier_16bit m6(b1, a2, ba);
-    multiplier_16bit m7(c1, d2, cd);
-    multiplier_16bit m8(d1, c2, dc);
-    multiplier_16bit m9(a1, c2, ac);
-    multiplier_16bit m10(b1, d2, bd);
-    multiplier_16bit m11(c1, a2, ca);
-    multiplier_16bit m12(d1, b2, db);
-    multiplier_16bit m13(a1, d2, ad);
-    multiplier_16bit m14(b1, c2, bc);
-    multiplier_16bit m15(c1, b2, cb);
-    multiplier_16bit m16(d1, a2, da);
+    multiplier_16bit m1(a1_buf, a2_buf, aa);
+    multiplier_16bit m2(b1_buf, b2_buf, bb);
+    multiplier_16bit m3(c1_buf, c2_buf, cc);
+    multiplier_16bit m4(d1_buf, d2_buf, dd);
+    multiplier_16bit m5(a1_buf, b2_buf, ab);
+    multiplier_16bit m6(b1_buf, a2_buf, ba);
+    multiplier_16bit m7(c1_buf, d2_buf, cd);
+    multiplier_16bit m8(d1_buf, c2_buf, dc);
+    multiplier_16bit m9(a1_buf, c2_buf, ac);
+    multiplier_16bit m10(b1_buf, d2_buf, bd);
+    multiplier_16bit m11(c1_buf, a2_buf, ca);
+    multiplier_16bit m12(d1_buf, b2_buf, db);
+    multiplier_16bit m13(a1_buf, d2_buf, ad);
+    multiplier_16bit m14(b1_buf, c2_buf, bc);
+    multiplier_16bit m15(c1_buf, b2_buf, cb);
+    multiplier_16bit m16(d1_buf, a2_buf, da);
 
     wire [31:0] pp_bb, pp_cc, pp_dd;
     twos_complement_32 pp1(bb, pp_bb);
@@ -159,27 +205,42 @@ module direct(
     twos_complement_32 pp2(cc, pp_cc);
     ripple_adder_32 sub2(k1, pp_cc, 1'b0, k2, d14);
     twos_complement_32 pp3(dd, pp_dd);
-    ripple_adder_32 sub3(k2, pp_dd, 1'b0, r1, d3);
+    ripple_adder_32 sub3(k2, pp_dd, 1'b0, r1_w, d3);
 
     ripple_adder_32 add1(ab, ba, 1'b0, k3, d4);
     ripple_adder_32 add2(k3, cd, 1'b0, k4, d5);
     wire [31:0] pp_dc;
     twos_complement_32 pp4(dc, pp_dc);
-    ripple_adder_32 sub4(k4, pp_dc, 1'b0, r2, d6);
+    ripple_adder_32 sub4(k4, pp_dc, 1'b0, r2_w, d6);
 
     wire [31:0] pp_bd;
     twos_complement_32 pp5(bd, pp_bd);
     ripple_adder_32 sub5(ac, pp_bd, 1'b0, k5, d7);
     ripple_adder_32 add3(k5, ca, 1'b0, k6, d8);
-    ripple_adder_32 add4(k6, db, 1'b0, r3, d9);
+    ripple_adder_32 add4(k6, db, 1'b0, r3_w, d9);
 
     ripple_adder_32 add5(ad, bc, 1'b0, k7, d10);
     wire [31:0] pp_cb;
     twos_complement_32 pp6(cb, pp_cb);
     ripple_adder_32 sub6(k7, pp_cb, 1'b0, k8, d11);
-    ripple_adder_32 add6(k8, da, 1'b0, r4, d12);
+    ripple_adder_32 add6(k8, da, 1'b0, r4_w, d12);
+    
+ // Output buffer
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        r1 <= 0;
+        r2 <= 0;
+        r3 <= 0;
+        r4 <= 0;
+        valid <= 0;
+    end else if (compute) begin
+        r1 <= r1_w;
+        r2 <= r2_w;
+        r3 <= r3_w;
+        r4 <= r4_w;
+        valid <= 1;
+    end else begin
+        valid <= 0;
+    end
+end
 endmodule
- 
-
-  
-  
