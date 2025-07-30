@@ -1,4 +1,23 @@
 `timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 07/31/2025 12:10:38 AM
+// Design Name: 
+// Module Name: algorithmic_multiplication
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
 
 //modified ripple carry adder
 
@@ -94,11 +113,16 @@ module baugh_wooley (
     generate
         for (i = 0; i < 16; i = i + 1) 
 		     begin
-                 for (j = 0; j < 16; j = j + 1) assign partial[i][i+j] = ((i == 15) ^ (j == 15)) ? ~(a[i] & b[j]) : (a[i] & b[j]);
-
+                 for (j = 0; j < 16; j = j + 1) begin 
+                 assign partial[i][i+j] = ((i == 15) ^ (j == 15)) ? ~(a[i] & b[j]) : (a[i] & b[j]);
+end
             //filling left over bits with zero
-            for (j = 0; j < i; j = j + 1) assign partial[i][j] = 1'b0;
-            for (j = i + 16; j < 32; j = j + 1) assign partial[i][j] = 1'b0;
+            for (j = 0; j < i; j = j + 1) begin
+            assign partial[i][j] = 1'b0;
+            end
+            for (j = i + 16; j < 32; j = j + 1) begin
+             assign partial[i][j] = 1'b0;
+             end
            end
     endgenerate
 	 
@@ -117,7 +141,7 @@ endmodule
 
 
 //quaternion multiplier
-module qf (
+module quaternion_multiplication (
     input  clk,
     input  rst,
     input  signed [15:0] a0, a1, a2, a3,
@@ -164,3 +188,6 @@ module qf (
     modified_rca add6 (.a(s31), .b(t[14]), .sum(s32));
     modified_rca add7 (.a(s32), .b(t[15]), .sum(q3));
 endmodule
+
+               
+	
