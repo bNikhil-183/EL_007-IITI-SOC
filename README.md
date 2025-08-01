@@ -32,7 +32,11 @@ The project investigates and compares four different architectures for quaternio
 - 
 ## External Resources
 
-
+https://share.google/vLRxOtKJnZ5gnRpvB
+https://share.google/mTRVE3X9I1PaTySKQ
+https://share.google/U68MjuvapWPtFbpu9
+https://share.google/SIA1VyrFZaAz3vVPz
+https://share.google/DvmhEwlhn4XL35j5F
 
 
 ## Tools Used
