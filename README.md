@@ -1,14 +1,15 @@
 # EL_007: Hardware Accelerator for Quaternion Multiplication
 
+**Team Name:** EL\_007  
+- Bhasuru Nikhil  
+- Nainsi Kushwaha  
+- Shakkar Ridhi  
+
 ## Overview
 
 This repository contains the complete Verilog HDL implementation and system integration of a **hardware accelerator for quaternion multiplication**, developed as part of the IITI Summer of Code (SoC) program by Team EL_007.
 ## Team Members
 
-**Team Name:** EL\_007  
-- Bhasuru Nikhil  
-- Nainsi Kushwaha  
-- Shakkar Ridhi  
 
 The project investigates and compares four different architectures for quaternion multiplication on FPGA:
 - Direct Multiplier
