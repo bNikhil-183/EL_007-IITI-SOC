@@ -1,5 +1,3 @@
-# EL_007-IITI-SOC
-Hardware acceleration for quaternion multiplication
 # EL_007: Hardware Accelerator for Quaternion Multiplication
 
 ## Overview
